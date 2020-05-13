@@ -76,10 +76,8 @@ function loadShirtDirectory(gender) {
 
   // Fetch URL and stash in RAM
   fetch(shirtUrl)
-    .then(function(response) { 
-      return response.json()
-    })
-    .then(function(listOfShirts) {
+    .then(response => response.json())
+    .then(listOfShirts => {
         GLOBAL_RAM_CACHE[shirtUrl] = listOfShirts;
         randomlySelectShirtAndAssign(listOfShirts);
     });
