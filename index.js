@@ -59,7 +59,10 @@ let googlePayClient;
  * Google Pay. This function is executed when the Google Pay library script has
  * finished loading.
  */
-function onGooglePayLoaded() {
+let googlePayClient; function onGooglePayLoaded() {
+   googlePayClient = new google.payments.api.PaymentsClient({
+    environment: 'TEST'
+  });
   
   // Initialize the client and determine readiness to pay with Google Pay:
   // 1. Instantiate the client using the 'TEST' environment.
@@ -72,7 +75,30 @@ function onGooglePayLoaded() {
  * Once created, this button is appended to the DOM, under the element 
  * 'buy-now'.
  */
-function createAndAddButton() {
+function createAndAddButton() {  const googlePayButton = googlePayClient.createButton({
+
+    // currently defaults to black if default or omitted
+    buttonColor: 'default',
+
+    // defaults to long if omitted
+    buttonType: 'long',
+
+    onClick: onGooglePaymentsButtonClicked
+  });
+
+  document.getElementById('buy-now').appendChild(googlePayButton);
+}
+
+function onGooglePaymentsButtonClicked() {
+  const tokenizationSpecification = {
+  type: 'PAYMENT_GATEWAY',
+  parameters: {
+    gateway: 'example',
+    gatewayMerchantId: 'gatewayMerchantId'
+  }
+};
+  // TODO: Perform transaction
+}
 
   // TODO: Create Google Pay button andd add it to the DOM.
 
@@ -87,7 +113,31 @@ function createAndAddButton() {
  * care of defining the payment data request to be used in order to load
  * the payments methods available to the user.
  */
-function onGooglePaymentsButtonClicked() {
+function onGooglePaymentsButtonClicked() {const cardPaymentMethod = {
+  type: 'CARD',
+  tokenizationSpecification: tokenizationSpecification,
+  parameters: {
+    allowedCardNetworks: ['VISA','MASTERCARD'],
+    allowedAuthMethods: ['PAN_ONLY','CRYPTOGRAM_3DS'],
+    billingAddressRequired: true,
+    billingAddressParameters: {
+      format: 'FULL',
+      phoneNumberRequired: true
+    }
+  }
+};
+  
+  
+  googlePayClient.isReadyToPay(googlePayBaseConfiguration)
+  .then(function(response) {
+    if(response.result) {
+      createAndAddButton();
+    } else {
+      alert("Unable to pay using Google Pay");
+    }
+  }).catch(function(err) {
+    console.error("Error determining readiness to use Google Pay: ", err);
+  });
   
   // TODO: Launch the payments sheet using the loadPaymentData method in the payments client:
   // 1. Update the card created before to include a tokenization spec and other parameters.
