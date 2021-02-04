@@ -162,18 +162,37 @@ const merchantInfo = {
   // merchantId: '01234567890123456789', Only in PRODUCTION
   merchantName: 'Example Merchant Name'
 };
-                                          const paymentDataRequest = Object.assign({}, googlePayBaseConfiguration, {
+const paymentDataRequest = Object.assign({}, googlePayBaseConfiguration, {
   allowedPaymentMethods: [cardPaymentMethod],
   transactionInfo: transactionInfo,
   merchantInfo: merchantInfo   
 });
-                                          googlePayClient
+  googlePayClient
   .loadPaymentData(paymentDataRequest)
   .then(function(paymentData) {
     processPayment(paymentData);
   }).catch(function(err) {
     // Log error: { statusCode: CANCELED || DEVELOPER_ERROR }
   });
+  const shippingOptionParameters = {
+  shippingOptions: [
+    {
+      id: 'shipping-001',
+      label: '$1.99: Standard shipping',
+      description: 'Delivered on May 15.'
+    },
+    {
+      id: 'shipping-002',
+      label: '$3.99: Expedited shipping',
+      description: 'Delivered on May 12.'
+    },
+    {
+      id: 'shipping-003',
+      label: '$10: Express shipping',
+      description: 'Delivered tomorrow.'
+    }
+  ]
+};
   // TODO: Launch the payments sheet using the loadPaymentData method in the payments client:
   // 1. Update the card created before to include a tokenization spec and other parameters.
   // 2. Add information about the transaction.
@@ -183,6 +202,41 @@ const merchantInfo = {
 }
 
 function sendPayloadToProcessor(googlePayPayload) {
+  
+  googlePayClient = new google.payments.api.PaymentsClient({
+    paymentDataCallbacks: { onPaymentDataChanged: paymentDataCallback },
+    environment: 'TEST'
+  });
+  ...
+}
+
+function paymentDataCallback(callbackPayload) {
+
+  const selectedShippingOptionId = callbackPayload.shippingOptionData.id;
+  const shippingSurcharge = shippingSurcharges[selectedShippingOptionId];
+  const priceWithSurcharges = 123.45 + shippingSurcharge;
+
+  return {
+    newTransactionInfo: {
+      totalPriceStatus: 'FINAL',
+      totalPrice: priceWithSurcharges.toFixed(2),
+      totalPriceLabel: 'Total',
+      currencyCode: 'USD',
+      displayItems: [
+        {
+          label: 'Subtotal',
+          type: 'SUBTOTAL',
+          price: priceWithSurcharges.toFixed(2),
+        },
+        {
+          label: 'Shipping',
+          type: 'LINE_ITEM',
+          price: shippingSurcharge.toFixed(2),
+          status: 'FINAL'
+        }]
+    }
+  }
+};
   // Send a POST request to your processor with the payload
   // https://us-central1-devrel-payments.cloudfunctions.net/google-pay-server 
 }
