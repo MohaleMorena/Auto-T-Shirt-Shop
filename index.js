@@ -43,7 +43,22 @@ const baseCardPaymentMethod = {
 const googlePayBaseConfiguration = {
   apiVersion: 2,
   apiVersionMinor: 0,
-  allowedPaymentMethods: [baseCardPaymentMethod]
+  allowedPaymentMethods: {
+    "description": "Visa •••• 1234",
+    "tokenizationData": {
+      "type": "PAYMENT_GATEWAY",
+      "token": "examplePaymentMethodToken"
+    },
+    "type": "CARD",
+    "info": {
+      "cardNetwork": "VISA",
+      "cardDetails": "1234",
+      "billingAddress": {
+        "phoneNumber": ...,
+        ...
+      }
+    }
+  }
 };
 
 /**
@@ -138,7 +153,27 @@ function onGooglePaymentsButtonClicked() {const cardPaymentMethod = {
   }).catch(function(err) {
     console.error("Error determining readiness to use Google Pay: ", err);
   });
-  
+  const transactionInfo = {
+  totalPriceStatus: 'FINAL',
+  totalPrice: '123.45',
+  currencyCode: 'USD'
+};
+const merchantInfo = {
+  // merchantId: '01234567890123456789', Only in PRODUCTION
+  merchantName: 'Example Merchant Name'
+};
+                                          const paymentDataRequest = Object.assign({}, googlePayBaseConfiguration, {
+  allowedPaymentMethods: [cardPaymentMethod],
+  transactionInfo: transactionInfo,
+  merchantInfo: merchantInfo   
+});
+                                          googlePayClient
+  .loadPaymentData(paymentDataRequest)
+  .then(function(paymentData) {
+    processPayment(paymentData);
+  }).catch(function(err) {
+    // Log error: { statusCode: CANCELED || DEVELOPER_ERROR }
+  });
   // TODO: Launch the payments sheet using the loadPaymentData method in the payments client:
   // 1. Update the card created before to include a tokenization spec and other parameters.
   // 2. Add information about the transaction.
